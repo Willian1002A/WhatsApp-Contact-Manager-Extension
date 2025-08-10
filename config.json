@@ -1,0 +1,10 @@
+{
+    "whatsappWebUrl": "https://web.whatsapp.com/",
+    "defaultMinDelay": 5,
+    "defaultMaxDelay": 10,
+    "buttonSelector": "button:has(span[data-icon='wds-ic-send-filled'])",
+    "footerSelector": "footer",
+    "retryTimeout": 6000,
+    "retryMaxTimeout": 10000,
+    "retryInterval": 500
+}

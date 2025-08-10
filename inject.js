@@ -1,19 +1,20 @@
+import { PageElementHelper } from './pageElementHelper.js';
+
 // Localiza o botão principal de envio
 function findSendButton() {
     const selector = 'button:has(span[data-icon="wds-ic-send-filled"])';
-    return document.querySelector(selector);
+    return PageElementHelper.findElement(selector);
 }
 
 // Localiza o botão de envio no footer como fallback
 function findSendButtonFallback() {
-    const foot = document.querySelector('footer');
-    if (foot) {
-        const possible = foot.querySelectorAll('button');
-        for (const b of possible) {
-            const span = b.querySelector('span[data-icon="wds-ic-send-filled"]');
-            if (span) {
-                return b;
-            }
+    const foot = PageElementHelper.findElement('footer');
+    if (! foot) return null;
+    const possible = foot.querySelectorAll('button');
+    for (const b of possible) {
+        const span = b.querySelector('span[data-icon="wds-ic-send-filled"]');
+        if (span) {
+            return b;
         }
     }
     return null;
@@ -25,11 +26,7 @@ function tryClickSendButton() {
     if (!btn) {
         btn = findSendButtonFallback();
     }
-    if (btn) {
-        btn.click();
-        return true;
-    }
-    return false;
+    return PageElementHelper.clickElement(btn);
 }
 
 // Função que tenta clicar no botão repetidamente

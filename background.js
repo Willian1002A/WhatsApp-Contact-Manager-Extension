@@ -1,3 +1,5 @@
+import { PageElementHelper } from './pageElementHelper.js';
+
 class WhatsAppBulkSender {
     constructor() {
         /** @type {boolean} */
@@ -5,7 +7,25 @@ class WhatsAppBulkSender {
 
         /** @type {boolean} */
         this.stopRequested = false;
+
+        /** @type {Object} */
+        this.config = {};
     }
+
+    /**
+     * Carrega as configurações do arquivo JSON.
+     * @returns {Promise<void>}
+     */
+    async loadConfig() {
+        try {
+            const response = await fetch(chrome.runtime.getURL('config.json'));
+            this.config = await response.json();
+        } catch (err) {
+            console.error('Erro ao carregar configurações:', err);
+        }
+    }
+
+
 
     /**
      * Aguarda um tempo específico.
@@ -21,11 +41,11 @@ class WhatsAppBulkSender {
      * @returns {Promise<chrome.tabs.Tab>} - Retorna a aba do WhatsApp Web.
      */
     async getWhatsAppTab() {
-        let tabs = await chrome.tabs.query({ url: '*://web.whatsapp.com/*' });
+        let tabs = await chrome.tabs.query({ url: `${this.config.whatsappWebUrl}*` });
         if (tabs && tabs.length) {
             return tabs[0];
         }
-        return await chrome.tabs.create({ url: 'https://web.whatsapp.com/', active: false });
+        return await chrome.tabs.create({ url: this.config.whatsappWebUrl, active: false });
     }
 
     /**
@@ -38,17 +58,8 @@ class WhatsAppBulkSender {
     async navigateToContact(tabId, contact, messageTemplate) {
         const personalized = messageTemplate.replace(/{{\s*name\s*}}/gi, contact.name || '');
         const encoded = encodeURIComponent(personalized);
-        const sendUrl = `https://web.whatsapp.com/send?phone=${contact.number}&text=${encoded}`;
+        const sendUrl = `${this.config.whatsappWebUrl}send?phone=${contact.number}&text=${encoded}`;
         await chrome.tabs.update(tabId, { url: sendUrl });
-    }
-
-    /**
-     * Localiza o botão principal de envio.
-     * @returns {HTMLElement | null} - Retorna o botão de envio ou null se não encontrado.
-     */
-    findSendButton() {
-        const selector = 'button:has(span[data-icon="wds-ic-send-filled"])';
-        return document.querySelector(selector);
     }
 
     /**
@@ -84,7 +95,8 @@ class WhatsAppBulkSender {
             await this.navigateToContact(tab.id, contact, messageTemplate);
 
             // Aguarda o carregamento da página e clica no botão de envio
-            await this.wait(6000 + Math.floor(Math.random() * 10000));
+            // await this.wait(6000 + Math.floor(Math.random() * 10000));
+            await this.wait(this.config.retryTimeout + Math.floor(Math.random() * this.config.retryMaxTimeout));
             await this.clickSendButton(tab.id);
 
             // Delay aleatório antes do próximo envio
@@ -106,6 +118,12 @@ class WhatsAppBulkSender {
         try {
             this.running = true;
             this.stopRequested = false;
+
+            await this.loadConfig(); // Certifique-se de carregar as configurações
+            if (!this.config || Object.keys(this.config).length === 0) {
+                console.error('Configurações não carregadas!');
+                return;
+            }
 
             const tab = await this.getWhatsAppTab();
             await this.processMessages(tab, contacts, minDelay, maxDelay, messageTemplate);
