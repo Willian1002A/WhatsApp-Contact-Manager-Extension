@@ -25,9 +25,14 @@
     "128": "icons/icon128.png"
   },
   "web_accessible_resources": [
-      {
-          "resources": ["inject.js"],
-          "matches": ["https://web.whatsapp.com/*"]
-      }
+    {
+      "resources": [
+        "inject.js",
+        "config.json"
+      ],
+      "matches": [
+        "https://web.whatsapp.com/*"
+      ]
+    }
   ]
 }
